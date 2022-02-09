@@ -1,7 +1,9 @@
 pipeline {
 
-  agent any
-
+  agent {
+    label 'kube-slave'
+  }
+  
   stages {
 
     stage('Checkout Source') {
