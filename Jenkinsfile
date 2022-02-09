@@ -1,9 +1,7 @@
 pipeline {
 
-  agent {
-    label 'kube-slave'
-  }
-  
+  agent any
+
   stages {
 
     stage('Checkout Source') {
@@ -11,11 +9,31 @@ pipeline {
         git url:'https://github.com/rbouikila/hellowhale.git', branch:'master'
       }
     }
-        
+    
+      stage("Build image") {
+            steps {
+                script {
+                    myapp = docker.build("rbouikila/hellowhale:${env.BUILD_ID}")
+                }
+            }
+        }
+    
+      stage("Push image") {
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub') {
+                            myapp.push("latest")
+                            myapp.push("${env.BUILD_ID}")
+                    }
+                }
+            }
+        }
+
+    
     stage('Deploy App') {
       steps {
         script {
-          kubernetesDeploy(configs: "hellowhale.yml")
+          kubernetesDeploy(configs: "hellowhale.yml", kubeconfigId: "Jenkins_kubernetes")
         }
       }
     }
